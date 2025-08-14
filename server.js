@@ -457,17 +457,17 @@ function connectRikWebSocket() {
             "thanhbinhsb",
             {
                 info: JSON.stringify({
-                    ipAddress: "2402:800:6379:9483:993:c83f:a5b1:54ff",
+                    ipAddress: "116.110.43.49",
                     wsToken: TOKEN,
                     locale: "vi",
                     userId: "5e22260a-9109-46f8-9e15-95f18f2c1b4f",
                     username: "SC_thanhbinhsb",
-                    timestamp: 1755154715292,
-                    refreshToken: "043f339a309f4f3bbbc3e4473232b2b73.cd48f2f637bb498caf35d38375841bde",
-                    avatar: "https://images.swinshop.net/images/avatar/avatar_20.png",
-                    platformId: 5
+                    timestamp: 1755158211302,
+                    refreshToken: "043f339a309f4f3bbc3e4473232b2b73.cd48f2f637bb498caf35d38375841bde",
+                    avatar: "https://images.swinshop.net/images/avatar/avatar_02.png",
+                    platformId: 2
                 }),
-                signature: "61D7FB797A3EE51E6E6457773FC596609462CB35BC1E3A3721D7BC074DEB9B1012C72AA8866F1F0CFC32AD5CD1F4D1D93E56013FA51DCF5C0E593B8425B7C8AF0185017B294BC8A1987FFBCC01C8A64781BA07B84711FBFCDF90ADD24F5F25CEBFDAE0D79B7D0C4FFA57E39A50148AB8D07B7EF760AE905781379FC86EBCECF",
+                signature: "3A5AF91C1519123EF93A60CACC0FA9E5C295194C338FF3CD47981C8172D2F692C4852042F179F3A39DDC658827EEAD99905A012FDC1AD4A564D18FDA3433C2657C0E546B978008D39A9BA3F0DF86785824532305AFBD73DE565692F04A6F40CE98AF2471C27061C227C93088BA63C2B3BFF7CE4D9B9DBFE933E769A07C7D6136",
                 pid: 5,
                 subi: true
             }
