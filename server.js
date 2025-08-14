@@ -446,7 +446,7 @@ function sendRikCmd1005() {
 
 function connectRikWebSocket() {
     console.log("🔌 Đang kết nối đến WebSocket của SunWin...");
-    rikWS = new WebSocket(`wss://websocket.azhkthg1.net/wsbinary?token=${TOKEN}`);
+    rikWS = new WebSocket(`wss://websocket.azhkthg1.net/?token=${TOKEN}`);
 
     rikWS.on("open", () => {
         const authPayload = [
