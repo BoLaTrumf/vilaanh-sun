@@ -4,7 +4,11 @@ const WebSocket = require("ws");
 const fs = require("fs");
 const path = require("path");
 
-const TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5kZXIiOjAsImNhblZpZXdTdGF0IjpmYWxzZSwiZGlzcGxheU5hbWUiOiJ0cmFudGhhbmhiaW5ocG0iLCJib3QiOjAsImlzTWVyY2hhbnQiOmZhbHNlLCJ2ZXJpZmllZEJhbmtBY2NvdW50Ijp0cnVlLCJwbGF5RXZlbnRMb2JieSI6ZmFsc2UsImN1c3RvbWVySWQiOjI0MzE2NTExMSwiYWZmSWQiOiJkZWZhdWx0IiwiYmFubmVkIjpmYWxzZSwiYnJhbmQiOiJzdW4ud2luIiwidGltZXN0YW1wIjoxNzU1MTU4MjExMzAyLCJsb2NrR2FtZXMiOltdLCJhbW91bnQiOjAsImxvY2tDaGF0IjpmYWxzZSwicGhvbmVWZXJpZmllZCI6ZmFsc2UsImlwQWRkcmVzcyI6IjExNi4xMTAuNDMuNDkiLCJtdXRlIjpmYWxzZSwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuc3dpbnNob3AubmV0L2ltYWdlcy9hdmF0YXIvYXZhdGFyXzAyLnBuZyIsInBsYXRmb3JtSWQiOjIsInVzZXJJZCI6IjVlMjIyNjBhLTkxMDktNDZmOC05ZTE1LTk1ZjE4ZjJjMWI0ZiIsInJlZ1RpbWUiOjE3NDYwODU3ODQ0NTcsInBob25lIjoiIiwiZGVwb3NpdCI6dHJ1ZSwidXNlcm5hbWUiOiJTQ190aGFuaGJpbmhzYiJ9.ee5OK0q-8DvxP5aI-s8H1Jv-msP6jHWm851N6Gjd5Yo";
+const TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5kZXIiOjAsImNhblZpZXdTdGF0IjpmYWxzZSwiZGlzcGxheU5hbWUiOiJ0cnVtbW1tbSIsImJvdCI6MCwiaXNNZXJjaGFudCI6ZmFsc2UsInZlcmlmaWVkQmFua0FjY291bnQiOmZhbHNlLCJwbGF5RXZlbnRMb2JieSI6ZmFsc2UsImN1c3RvbWVySWQiOjMxMTAzNTM4NCwiYWZmSWQiOiJHRU1XSU4iLCJiYW5uZWQiOmZhbHNlLCJicmFuZCI6ImdlbSIsInRpbWVzdGFtcCI6MTc1NTA2NDc3MjI4MywibG9ja0dhbWVzIjpbXSwiYW1vdW50IjowLCJsb2NrQ2hhdCI6ZmFsc2UsInBob25lVmVyaWZpZWQiOmZhbHNlLCJpcEFkZHJlc3MiOiIyMDAxOmVlMDo1MTQ4OmZlNDA6NTFjYjoxMmRiOjRlMTA6OTU0IiwibXV0ZSI6ZmFsc2UsImF2YXRhciI6Imh0dHBzOi8vaW1hZ2VzLnN3aW5zaG9wLm5ldC9pbWFnZXMvYXZhdGFyL2F2YXRhcl8xNi5wbmciLCJwbGF0Zm9ybUlkIjoxMCwidXNlcklkIjoiZWM4OTQ5MmMtNTYyNy00ZWNiLTgwMjItMDliNWFmYzMxZTBkIiwicmVnVGltZSI6MTc1NDI3MDA4NDU5OCwicGhvbmUiOiIiLCJkZXBvc2l0IjpmYWxzZSwidXNlcm5hbWUiOiJHTV9uZ3V5ZW52YW50aW5oMTMzIn0.4Qn3VvX7TjX0gS7x4K6p5yT2lJjC2wL9u-zL9yK9s0E";
+const REFRESH_TOKEN = "a215a90ef4b34d1bbbafd185d33f6c64.6c896b010fd341c89e645661378867c7";
+const USER_ID = "6fe31b15-f6a5-4552-9b52-6f57fe689664";
+const USERNAME = "GM_binhlaanh";
+const IP_ADDRESS = "125.235.239.217";
 
 const fastify = Fastify({ logger: false });
 const PORT = process.env.PORT || 3001;
@@ -14,6 +18,33 @@ let rikResults = [];
 let rikCurrentSession = null;
 let rikWS = null;
 let rikIntervalCmd = null;
+let wsToken = TOKEN;
+
+async function refreshAuthToken() {
+  console.log("🔄 Refreshing WebSocket token...");
+  try {
+    const response = await fetch('https://api.gmwin.io/auth/refresh_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken: REFRESH_TOKEN }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      wsToken = data.token;
+      console.log("✅ Token refreshed successfully.");
+      return true;
+    } else {
+      console.error("❌ Failed to refresh token:", response.statusText);
+      return false;
+    }
+  } catch (err) {
+    console.error("❌ Error during token refresh:", err);
+    return false;
+  }
+}
 
 function loadHistory() {
   try {
@@ -66,93 +97,42 @@ function getTX(d1, d2, d3) {
   return d1 + d2 + d3 >= 11 ? "T" : "X";
 }
 
-function analyzePatterns(history) {
-  if (history.length < 5) return null;
-  const patternHistory = history.slice(0, 30).map(item => getTX(item.d1, item.d2, item.d3)).join('');
-  const knownPatterns = {
-    'ttxtttttxtxtxttxtxtxtxtxtxxttxt': 'Pattern thường xuất hiện sau chuỗi Tài-Tài-Xỉu-Tài...',
-    'ttttxxxx': '4 Tài liên tiếp thường đi kèm 4 Xỉu',
-    'xtxtxtxt': 'Xen kẽ Tài Xỉu ổn định',
-    'ttxxttxxttxx': 'Chu kỳ 2 Tài 2 Xỉu'
-  };
-  for (const [pattern, description] of Object.entries(knownPatterns)) {
-    if (patternHistory.includes(pattern)) {
-      return {
-        pattern, description,
-        confidence: Math.floor(Math.random() * 20) + 80
-      };
-    }
-  }
-  return null;
-}
-
-function predictNext(history) {
-  if (history.length < 4) return history.at(-1) || "Tài";
-  const last = history.at(-1);
-
-  if (history.slice(-4).every(k => k === last)) return last;
-
-  if (history.length >= 4 &&
-    history.at(-1) === history.at(-2) &&
-    history.at(-3) === history.at(-4) &&
-    history.at(-1) !== history.at(-3)) {
-    return last === "Tài" ? "Xỉu" : "Tài";
-  }
-
-  const last4 = history.slice(-4);
-  if (last4[0] !== last4[1] && last4[1] === last4[2] && last4[2] !== last4[3]) {
-    return last === "Tài" ? "Xỉu" : "Tài";
-  }
-
-  const pattern = history.slice(-6, -3).toString();
-  const latest = history.slice(-3).toString();
-  if (pattern === latest) return history.at(-1);
-
-  if (new Set(history.slice(-3)).size === 3) {
-    return Math.random() < 0.5 ? "Tài" : "Xỉu";
-  }
-
-  const count = history.reduce((acc, val) => {
-    acc[val] = (acc[val] || 0) + 1;
-    return acc;
-  }, {});
-  return (count["Tài"] || 0) > (count["Xỉu"] || 0) ? "Xỉu" : "Tài";
-}
-
 function sendRikCmd1005() {
   if (rikWS?.readyState === WebSocket.OPEN) {
     rikWS.send(JSON.stringify([6, "MiniGame", "taixiuPlugin", { cmd: 1005 }]));
   }
 }
 
-function connectRikWebSocket() {
+async function connectRikWebSocket() {
   console.log("🔌 Connecting to SunWin WebSocket...");
-  rikWS = new WebSocket(`wss://websocket.azhkthg1.net/websocket?token=${TOKEN}`);
+  
+  if (rikWS) {
+    rikWS.close();
+  }
+
+  rikWS = new WebSocket(`wss://websocket.gmwin.io/websocket?token=${wsToken}`);
 
   rikWS.on("open", () => {
-        const authPayload = [
-            1,
-            "MiniGame",
-            "SC_thanhbinhsb",
-            "thanhbinhsb",
-            {
-                info: JSON.stringify({
-                    ipAddress: "116.110.43.49",
-                    wsToken: TOKEN,
-                    locale: "vi",
-                    userId: "5e22260a-9109-46f8-9e15-95f18f2c1b4f",
-                    username: "SC_thanhbinhsb",
-                    timestamp: 1755158211302,
-                    refreshToken: "043f339a309f4f3bbc3e4473232b2b73.cd48f2f637bb498caf35d38375841bde",
-                    avatar: "https://images.swinshop.net/images/avatar/avatar_02.png",
-                    platformId: 2
-                }),
-                signature: "3A5AF91C1519123EF93A60CACC0FA9E5C295194C338FF3CD47981C8172D2F692C4852042F179F3A39DDC658827EEAD99905A012FDC1AD4A564D18FDA3433C2657C0E546B978008D39A9BA3F0DF86785824532305AFBD73DE565692F04A6F40CE98AF2471C27061C227C93088BA63C2B3BFF7CE4D9B9DBFE933E769A07C7D6136",
-                pid: 5,
-                subi: true
-            }
-];
+    const authPayload = [
+      1,
+      "MiniGame",
+      USERNAME,
+      "123321",
+      {
+        info: JSON.stringify({
+          ipAddress: IP_ADDRESS,
+          wsToken: wsToken,
+          userId: USER_ID,
+          username: USERNAME,
+          timestamp: Date.now(),
+          refreshToken: REFRESH_TOKEN
+        }),
+        signature: "617E4E646C365151AA57F671D341828773EA99F93B08BF772E259B22070D7C87ED08936397ABA18589A7D963DBE9C13D320395AE0809A8947848B35090AB8CCB134BCD41EA3188C0F3DEFACDE00B31B09631C9D6C61780C0A518B54F725808CA00C9ED2EFDFC8FCDB19D43658BF9464CD9B5FD8092CB4C42579E19B28744E9E1"
+      }
+    ];
     rikWS.send(JSON.stringify(authPayload));
+
+    sendRikCmd1005();
     clearInterval(rikIntervalCmd);
     rikIntervalCmd = setInterval(sendRikCmd1005, 5000);
   });
@@ -170,7 +150,6 @@ function connectRikWebSocket() {
           if (rikResults.length > 100) rikResults.pop();
           saveHistory();
           console.log(`📥 Phiên mới ${res.sid} → ${getTX(res.d1, res.d2, res.d3)}`);
-          setTimeout(() => { rikWS?.close(); connectRikWebSocket(); }, 1000);
         }
       } else if (Array.isArray(json) && json[1]?.htr) {
         rikResults = json[1].htr.map(i => ({
@@ -184,9 +163,15 @@ function connectRikWebSocket() {
     }
   });
 
-  rikWS.on("close", () => {
-    console.log("🔌 WebSocket disconnected. Reconnecting...");
-    setTimeout(connectRikWebSocket, 5000);
+  rikWS.on("close", async () => {
+    console.log("🔌 WebSocket disconnected. Attempting to reconnect...");
+    // Refresh token before reconnecting
+    const success = await refreshAuthToken();
+    if (success) {
+      setTimeout(connectRikWebSocket, 1000);
+    } else {
+      console.error("❌ Failed to refresh token. Cannot reconnect.");
+    }
   });
 
   rikWS.on("error", (err) => {
@@ -199,7 +184,7 @@ loadHistory();
 connectRikWebSocket();
 fastify.register(cors);
 
-fastify.get("/api/taixiu/sunwin", async () => {
+fastify.get("/api/ditmemaysun", async () => {
   const valid = rikResults.filter(r => r.d1 && r.d2 && r.d3);
   if (!valid.length) return { message: "Không có dữ liệu." };
 
@@ -207,26 +192,14 @@ fastify.get("/api/taixiu/sunwin", async () => {
   const sum = current.d1 + current.d2 + current.d3;
   const ket_qua = sum >= 11 ? "Tài" : "Xỉu";
 
-  const recentTX = valid.map(r => getTX(r.d1, r.d2, r.d3)).slice(0, 30);
-  const predText = predictNext(recentTX);
-  const prediction = {
-    prediction: predText === "Tài" ? "T" : "X",
-    reason: "Dự đoán theo mẫu cầu nâng cao",
-    confidence: 80
-  };
-
   return {
-    id: "binhtool90",
-    phien: current.sid,
-    xuc_xac_1: current.d1,
-    xuc_xac_2: current.d2,
-    xuc_xac_3: current.d3,
-    tong: sum,
-    ket_qua,
-    du_doan: prediction.prediction === "T" ? "Tài" : "Xỉu",
-    ty_le_thanh_cong: `${prediction.confidence}%`,
-    giai_thich: prediction.reason,
-    pattern: analyzePatterns(valid)?.description || "Không phát hiện mẫu cụ thể"
+    Phien: current.sid,
+    Xuc_xac_1: current.d1,
+    Xuc_xac_2: current.d2,
+    Xuc_xac_3: current.d3,
+    Tong: sum,
+    Ket_qua: ket_qua,
+    id: "@mrtinhios",
   };
 });
 
