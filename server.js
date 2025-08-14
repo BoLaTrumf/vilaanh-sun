@@ -4,7 +4,7 @@ const WebSocket = require("ws");
 const fs = require("fs");
 const path = require("path");
 
-const TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5kZXIiOjAsImNhblZpZXdTdGF0IjpmYWxzZSwiZGlzcGxheU5hbWUiOiJhcGlzdW53aW52YyIsImJvdCI6MCwiaXNNZXJjaGFudCI6ZmFsc2UsInZlcmlmaWVkQmFua0FjY291bnQiOmZhbHNlLCJwbGF5RXZlbnRMb2JieSI6ZmFsc2UsImN1c3RvbWVySWQiOjI3NjQ3ODE3MywiYWZmSWQiOiJkOTNkM2Q4NC1mMDY5LTRiM2YtOGRhYy1iNDcxNmE4MTIxNDMiLCJiYW5uZWQiOmZhbHNlLCJicmFuZCI6InN1bi53aW4iLCJ0aW1lc3RhbXAiOjE3NTM0NDM3MjM2NjIsImxvY2tHYW1lcyI6W10sImFtb3VudCI6MCwibG9ja0NoYXQiOmZhbHNlLCJwaG9uZVZlcmlmaWVkIjpmYWxzZSwiaXBBZGRyZXNzIjoiMjAwMTplZTA6NTcwODo3NzAwOjhhZjM6YWJkMTpmZTJhOmM2MmMiLCJtdXRlIjpmYWxzZSwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuc3dpbnNob3AubmV0L2ltYWdlcy9hdmF0YXIvYXZhdGFyXzIwLnBuZyIsInBsYXRmb3JtSWQiOjUsInVzZXJJZCI6ImQ5M2QzZDg0LWYwNjktNGIzZi04ZGFjLWI0NzE2YTgxMjE0MyIsInJlZ1RpbWUiOjE3NTIwNDU4OTMyOTIsInBob25lIjoiIiwiZGVwb3NpdCI6ZmFsc2UsInVzZXJuYW1lIjoiU0NfYXBpc3Vud2luMTIzIn0.a-KRvIGfMqxtBq3WenudxP8pFx7mxj33iIZm-AklInk";
+const TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjblpwZGExZpAsIm5hbWUiOiJIYW5oIEF0b20iLCJvciI6Im9sdGFuIiwicm9sZSI6ImFkbWluIiwiZXhwIjoiMTc1NTE1Mzc0NzUyMjIuLmpzIiwiaXNzIjoiSnVuZ2xlIn0.wV_Sj-u6FjR7QG7cIqVj4x-H6sVb8";
 
 const fastify = Fastify({ logger: false });
 const PORT = process.env.PORT || 3001;
@@ -452,21 +452,21 @@ function connectRikWebSocket() {
         const authPayload = [
             1,
             "MiniGame",
-            "SC_apisunwin123",
-            "binhlamtool90",
+            "SC_hoanhdz102",
+            "123321",
             {
                 info: JSON.stringify({
-                    ipAddress: "2001:ee0:5708:7700:8af3:abd1:fe2a:c62c",
+                    ipAddress: "2402:800:6379:9483:993:c83f:a5b1:54ff",
                     wsToken: TOKEN,
                     locale: "vi",
-                    userId: "d93d3d84-f069-4b3f-8dac-b4716a812143",
-                    username: "SC_apisunwin123",
-                    timestamp: 1753443723662,
-                    refreshToken: "dd38d05401bb48b4ac3c2f6dc37f36d9.f22dccad89bb4e039814b7de64b05d63",
+                    userId: "0dad2f92-68a5-4597-9645-82f4bae8b4bb",
+                    username: "SC_hoanhdz102",
+                    timestamp: 1755153747522,
+                    refreshToken: "999711b93e9449c4bb58cae490ce8e29.c18aa90e385c4ba0960b40895f06d73c",
                     avatar: "https://images.swinshop.net/images/avatar/avatar_20.png",
                     platformId: 5
                 }),
-                signature: "4FD3165D59BD21DA76B4448EA62E81972BCD54BE0EDBC5291D2415274DA522089BF9318E829A67D07EC78783543D17E75671CBD6FDF60B42B55643F13B66DEB7B0510DE995A8C7C8EDBA4990CE3294C4340D86BF78B02A0E90C6565D1A32EAA894F7384302602CB2703C20981244103E42817257592D42828D6EDB0BB781ADA1",
+                signature: "33178E514E55B8E5172008B11B5F7AA1DA063F60B64F263EA12E2C0BF2DC72ED27F99E79ECF56399CD086E14F912A5EF0CFE3043F00FED4835B7B856C4FE324346A17FE4AE1E83059843EB6AA6C2FCAD1691B5287BE468649858871AC4A49CA020618DECE0685547E5A85AE56FB0A27F7CED9EBF4F63CA8452CE4C966F9D0A3",
                 pid: 5,
                 subi: true
             }
