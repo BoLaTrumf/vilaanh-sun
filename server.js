@@ -15,6 +15,7 @@ let rikCurrentSession = null;
 let rikWS = null;
 let rikIntervalCmd = null;
 
+// Load & save history
 function loadHistory() {
   try {
     if (fs.existsSync(HISTORY_FILE)) {
@@ -34,6 +35,7 @@ function saveHistory() {
   }
 }
 
+// Decode binary messages from WS
 function decodeBinaryMessage(buffer) {
   try {
     const str = buffer.toString();
@@ -62,10 +64,12 @@ function decodeBinaryMessage(buffer) {
   }
 }
 
+// Tài/Xỉu
 function getTX(d1, d2, d3) {
   return d1 + d2 + d3 >= 11 ? "T" : "X";
 }
 
+// Pattern analysis
 function analyzePatterns(history) {
   if (history.length < 5) return null;
   const patternHistory = history.slice(0, 30).map(item => getTX(item.d1, item.d2, item.d3)).join('');
@@ -86,6 +90,7 @@ function analyzePatterns(history) {
   return null;
 }
 
+// Dự đoán phiên tiếp theo
 function predictNext(history) {
   if (history.length < 4) return history.at(-1) || "Tài";
   const last = history.at(-1);
@@ -119,36 +124,38 @@ function predictNext(history) {
   return (count["Tài"] || 0) > (count["Xỉu"] || 0) ? "Xỉu" : "Tài";
 }
 
+// WebSocket command
 function sendRikCmd1005() {
   if (rikWS?.readyState === WebSocket.OPEN) {
     rikWS.send(JSON.stringify([6, "MiniGame", "taixiuPlugin", { cmd: 1005 }]));
   }
 }
 
+// Kết nối WebSocket SunWin
 function connectRikWebSocket() {
   console.log("🔌 Connecting to SunWin WebSocket...");
   rikWS = new WebSocket(`wss://websocket.azhkthg1.net/websocket?token=${TOKEN}`);
 
   rikWS.on("open", () => {
     const authPayload = [
-  1,
-  "MiniGame",
-  "SC_thanhbinhsb",
-  "binhthanhsb",
-  {
-    info: JSON.stringify({
-      ipAddress: "125.235.239.217",
-      wsToken: TOKEN,
-      userId: "5e22260a-9109-46f8-9e15-95f18f2c1b4f",
-      username: "SC_thanhbinhsb",
-      timestamp: 1755247051368,
-      refreshToken: "043f339a309f4f3bbc3e4473232b2b73.cd48f2f637bb498caf35d38375841bde",
-    }),
-    signature: "49CC9007069EE20B7764CACED1DA6D9D66B2A503D6AB42EF373F9D86C8BF4FA8D8A8C04ECC3D83E2A6CE3A13E8486C9B785FB92D26D36D68AD59090B56A4FA0494529F3A8D2F8335BB39B791DDAD22169C6CF07A2A90E3BC7957D24312A8DC682936BD058DA708E0DAFF94358DA346E98752EE6573DA463B1C873D1B7B90E392",
-    pid: 5,
-    subi: true
-  }
-];
+      1,
+      "MiniGame",
+      "SC_thanhbinhsb",
+      "binhthanhsb",
+      {
+        info: JSON.stringify({
+          ipAddress: "125.235.239.217",
+          wsToken: TOKEN,
+          userId: "5e22260a-9109-46f8-9e15-95f18f2c1b4f",
+          username: "SC_thanhbinhsb",
+          timestamp: 1755247051368,
+          refreshToken: "043f339a309f4f3bbc3e4473232b2b73.cd48f2f637bb498caf35d38375841bde",
+        }),
+        signature: "49CC9007069EE20B7764CACED1DA6D9D66B2A503D6AB42EF373F9D86C8BF4FA8D8A8C04ECC3D83E2A6CE3A13E8486C9B785FB92D26D36D68AD59090B56A4FA0494529F3A8D2F8335BB39B791DDAD22169C6CF07A2A90E3BC7957D24312A8DC682936BD058DA708E0DAFF94358DA346E98752EE6573DA463B1C873D1B7B90E392",
+        pid: 5,
+        subi: true
+      }
+    ];
     rikWS.send(JSON.stringify(authPayload));
     clearInterval(rikIntervalCmd);
     rikIntervalCmd = setInterval(sendRikCmd1005, 5000);
@@ -192,10 +199,12 @@ function connectRikWebSocket() {
   });
 }
 
+// Load history & connect WS
 loadHistory();
 connectRikWebSocket();
 fastify.register(cors);
 
+// API SunWin
 fastify.get("/api/taixiu/sunwin", async () => {
   const valid = rikResults.filter(r => r.d1 && r.d2 && r.d3);
   if (!valid.length) return { message: "Không có dữ liệu." };
@@ -206,38 +215,37 @@ fastify.get("/api/taixiu/sunwin", async () => {
 
   const recentTX = valid.map(r => getTX(r.d1, r.d2, r.d3)).slice(0, 30);
   const predText = predictNext(recentTX);
-  const prediction = {
-    prediction: predText === "Tài" ? "T" : "X",
-    reason: "Dự đoán theo mẫu cầu nâng cao",
-    confidence: 80
-  };
+  const patternAnalysis = analyzePatterns(valid);
 
   return {
     id: "binhtool90",
-    phien: current.sid,
-    xuc_xac_1: current.d1,
-    xuc_xac_2: current.d2,
-    xuc_xac_3: current.d3,
-    tong: sum,
-    ket_qua,
-    du_doan: prediction.prediction === "T" ? "Tài" : "Xỉu",
-    ty_le_thanh_cong: `${prediction.confidence}%`,
-    giai_thich: prediction.reason,
-    pattern: analyzePatterns(valid)?.description || "Không phát hiện mẫu cụ thể"
+    Phien: current.sid,
+    Xuc_xac_1: current.d1,
+    Xuc_xac_2: current.d2,
+    Xuc_xac_3: current.d3,
+    Tong: sum,
+    Ket_qua: ket_qua,
+    Pattern: patternAnalysis?.pattern || "Không phát hiện mẫu cụ thể",
+    Du_doan: predText === "T" || predText === "Tài" ? "Tài" : "Xỉu"
   };
 });
 
+// API lịch sử
 fastify.get("/api/taixiu/history", async () => {
   const valid = rikResults.filter(r => r.d1 && r.d2 && r.d3);
   if (!valid.length) return { message: "Không có dữ liệu lịch sử." };
+
   return valid.map(i => ({
-    session: i.sid,
-    dice: [i.d1, i.d2, i.d3],
-    total: i.d1 + i.d2 + i.d3,
-    result: getTX(i.d1, i.d2, i.d3) === "T" ? "Tài" : "Xỉu"
-  })).map(JSON.stringify).join("\n");
+    Phien: i.sid,
+    Xuc_xac_1: i.d1,
+    Xuc_xac_2: i.d2,
+    Xuc_xac_3: i.d3,
+    Tong: i.d1 + i.d2 + i.d3,
+    Ket_qua: getTX(i.d1, i.d2, i.d3) === "T" ? "Tài" : "Xỉu"
+  }));
 });
 
+// Start server
 const start = async () => {
   try {
     const address = await fastify.listen({ port: PORT, host: "0.0.0.0" });
