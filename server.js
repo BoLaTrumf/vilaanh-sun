@@ -69,59 +69,22 @@ function getTX(d1, d2, d3) {
   return d1 + d2 + d3 >= 11 ? "T" : "X";
 }
 
-// Pattern analysis
-function analyzePatterns(history) {
-  if (history.length < 5) return null;
-  const patternHistory = history.slice(0, 30).map(item => getTX(item.d1, item.d2, item.d3)).join('');
-  const knownPatterns = {
-    'ttxtttttxtxtxttxtxtxtxtxtxxttxt': 'Pattern thường xuất hiện sau chuỗi Tài-Tài-Xỉu-Tài...',
-    'ttttxxxx': '4 Tài liên tiếp thường đi kèm 4 Xỉu',
-    'xtxtxtxt': 'Xen kẽ Tài Xỉu ổn định',
-    'ttxxttxxttxx': 'Chu kỳ 2 Tài 2 Xỉu'
-  };
-  for (const [pattern, description] of Object.entries(knownPatterns)) {
-    if (patternHistory.includes(pattern)) {
-      return {
-        pattern, description,
-        confidence: Math.floor(Math.random() * 20) + 80
-      };
-    }
-  }
-  return null;
+// Lấy pattern 13 phiên gần nhất
+function getLast13Pattern(history) {
+  if (history.length < 13) return "Không đủ 13 phiên";
+  return history.slice(0, 13).map(item => getTX(item.d1, item.d2, item.d3)).join('');
 }
 
-// Dự đoán phiên tiếp theo
-function predictNext(history) {
-  if (history.length < 4) return history.at(-1) || "Tài";
-  const last = history.at(-1);
-
-  if (history.slice(-4).every(k => k === last)) return last;
-
-  if (history.length >= 4 &&
-    history.at(-1) === history.at(-2) &&
-    history.at(-3) === history.at(-4) &&
-    history.at(-1) !== history.at(-3)) {
-    return last === "Tài" ? "Xỉu" : "Tài";
-  }
-
-  const last4 = history.slice(-4);
-  if (last4[0] !== last4[1] && last4[1] === last4[2] && last4[2] !== last4[3]) {
-    return last === "Tài" ? "Xỉu" : "Tài";
-  }
-
-  const pattern = history.slice(-6, -3).toString();
-  const latest = history.slice(-3).toString();
-  if (pattern === latest) return history.at(-1);
-
-  if (new Set(history.slice(-3)).size === 3) {
-    return Math.random() < 0.5 ? "Tài" : "Xỉu";
-  }
-
-  const count = history.reduce((acc, val) => {
-    acc[val] = (acc[val] || 0) + 1;
-    return acc;
-  }, {});
-  return (count["Tài"] || 0) > (count["Xỉu"] || 0) ? "Xỉu" : "Tài";
+// Dự đoán đơn giản
+function simplePrediction(pattern) {
+  if (pattern.length < 13) return "Không đủ dữ liệu";
+  
+  const last3 = pattern.slice(0, 3);
+  const taiCount = (last3.match(/T/g) || []).length;
+  const xiuCount = 3 - taiCount;
+  
+  // Nếu 2 trong 3 phiên gần nhất là Tài -> Dự đoán Xỉu và ngược lại
+  return taiCount >= 2 ? "Xỉu" : "Tài";
 }
 
 // WebSocket command
@@ -212,10 +175,7 @@ fastify.get("/api/taixiu/sunwin", async () => {
   const current = valid[0];
   const sum = current.d1 + current.d2 + current.d3;
   const ket_qua = sum >= 11 ? "Tài" : "Xỉu";
-
-  const recentTX = valid.map(r => getTX(r.d1, r.d2, r.d3)).slice(0, 30);
-  const predText = predictNext(recentTX);
-  const patternAnalysis = analyzePatterns(valid);
+  const pattern = getLast13Pattern(valid);
 
   return {
     id: "binhtool90",
@@ -225,8 +185,8 @@ fastify.get("/api/taixiu/sunwin", async () => {
     Xuc_xac_3: current.d3,
     Tong: sum,
     Ket_qua: ket_qua,
-    Pattern: patternAnalysis?.pattern || "Không phát hiện mẫu cụ thể",
-    Du_doan: predText === "T" || predText === "Tài" ? "Tài" : "Xỉu"
+    du_doan: simplePrediction(pattern),
+    Pattern: pattern
   };
 });
 
