@@ -69,27 +69,6 @@ function getTX(d1, d2, d3) {
   return d1 + d2 + d3 >= 11 ? "T" : "X";
 }
 
-// Pattern analysis
-function analyzePatterns(history) {
-  if (history.length < 5) return null;
-  const patternHistory = history.slice(0, 30).map(item => getTX(item.d1, item.d2, item.d3)).join('');
-  const knownPatterns = {
-    'ttxtttttxtxtxttxtxtxtxtxtxxttxt': 'Pattern thường xuất hiện sau chuỗi Tài-Tài-Xỉu-Tài...',
-    'ttttxxxx': '4 Tài liên tiếp thường đi kèm 4 Xỉu',
-    'xtxtxtxt': 'Xen kẽ Tài Xỉu ổn định',
-    'ttxxttxxttxx': 'Chu kỳ 2 Tài 2 Xỉu'
-  };
-  for (const [pattern, description] of Object.entries(knownPatterns)) {
-    if (patternHistory.includes(pattern)) {
-      return {
-        pattern, description,
-        confidence: Math.floor(Math.random() * 20) + 80
-      };
-    }
-  }
-  return null;
-}
-
 // Dự đoán phiên tiếp theo
 function predictNext(history) {
   if (history.length < 4) return history.at(-1) || "Tài";
@@ -213,9 +192,11 @@ fastify.get("/api/taixiu/sunwin", async () => {
   const sum = current.d1 + current.d2 + current.d3;
   const ket_qua = sum >= 11 ? "Tài" : "Xỉu";
 
-  const recentTX = valid.map(r => getTX(r.d1, r.d2, r.d3)).slice(0, 30);
-  const predText = predictNext(recentTX);
-  const patternAnalysis = analyzePatterns(valid);
+  // Lấy 13 phiên gần nhất
+  const recentTX = valid.map(r => getTX(r.d1, r.d2, r.d3)).slice(0, 13);
+  const patternStr = recentTX.join('');
+
+  const predText = predictNext(valid.map(r => getTX(r.d1, r.d2, r.d3)).slice(0, 30));
 
   return {
     id: "binhtool90",
@@ -225,7 +206,7 @@ fastify.get("/api/taixiu/sunwin", async () => {
     Xuc_xac_3: current.d3,
     Tong: sum,
     Ket_qua: ket_qua,
-    Pattern: patternAnalysis?.pattern || "Không phát hiện mẫu cụ thể",
+    Pattern: patternStr,
     Du_doan: predText === "T" || predText === "Tài" ? "Tài" : "Xỉu"
   };
 });
